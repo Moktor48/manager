@@ -3,70 +3,74 @@ import { api } from '~/trpc/react'
 import DialogP from './DialogP';
 import DialogS from './DialogS';
 import DialogT from './DialogT';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState } from'react';
+import { useEffect, useState } from'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function PullTasks({id}: {id: string}) {
 const userId = id
-const { data: tasks } = api.post.task.useQuery({userId})
-const mutation = api.post.deleteTask.useMutation()
+const updateTime = new Date()
+const session = useSession()
+const delTask = api.post.deleteTask.useMutation()
 const updateTask = api.post.updateTask.useMutation()
 const updateStatus = api.post.updateStatus.useMutation()
 const updatePriority = api.post.updatePriority.useMutation()
 const router = useRouter()
+
+// include completed tasks
+const [showCompleted, setShowCompleted] = useState(false)
+const {data: tasks} = showCompleted? api.post.fullUserTask.useQuery({userId}) : api.post.userTask.useQuery({userId})
+
+// Deletes entire task from database
+const handleDelete = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  e.preventDefault()
+  delTask.mutate({id: e.currentTarget.id})
+  router.push(`/user/bounce/${userId}`)
+}
+
+// formData for the task components to be modified
 const [formDataT, setFormDataT] = useState({
+  updated: updateTime.toISOString(),
   task: "null",
   id: ""
 })
 
 const [formDataP, setFormDataP] = useState({
+  updated: updateTime.toISOString(),
   priority: "null",
   id: ""
 })
 
 const [formDataS, setFormDataS] = useState({
+  updated: updateTime.toISOString(),
   status: "null",
   id: ""
 })
 
-const handleDelete = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-  e.preventDefault()
-  console.log(e.currentTarget.id)
-  mutation.mutate({id: e.currentTarget.id})
-}
-
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
+// Submission logic for the task components to be modified
 function handleSubmitT(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault()
-  console.log(formDataT)
+  setFormDataT({...formDataT, updated: updateTime.toISOString()})
   updateTask.mutate(formDataT)
-  setFormDataT({id: "", task: "null"})
-  router.push(`/user/${userId}`)
-  router.refresh()
+  router.push(`/user/bounce/${userId}`)
 }
 
 function handleSubmitP(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault()
-  console.log(formDataP)
+  setFormDataP({...formDataP, updated: updateTime.toISOString()})
   updatePriority.mutate(formDataP)
-  setFormDataP({id: "", priority: "null"})
-  router.push(`/user/${userId}`)
-  router.refresh()
+  router.push(`/user/bounce/${userId}`)
 }
 
-async function handleSubmitS(e: React.FormEvent<HTMLFormElement>) {
+function handleSubmitS(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault()
-  console.log(formDataS)
+  setFormDataS({...formDataS, updated: updateTime.toISOString()})
   updateStatus.mutate(formDataS)
-  setFormDataS({id: "", status: "null"})
-  router.push(`/user/${userId}`)
-  await sleep(500)
-  router.refresh()
+  router.push(`/user/bounce/${userId}`)
 }
 
+// Change handler for the task components to be modified
 function handleChangeT(e: React.ChangeEvent<HTMLInputElement>) {
   setFormDataT({...formDataT, [e.target.name]: e.target.value})
 }
@@ -79,16 +83,25 @@ function handleChangeS(e: React.ChangeEvent<HTMLInputElement>) {
   setFormDataS({...formDataS, [e.target.name]: e.target.value})
 }
 
+// Clears searchParams from URL and refreshes the page
 async function onClose() {
   router.push(`/user/${userId}`)
 }
+
+function handleClick(e: React.MouseEvent<HTMLInputElement>) {
+  e.preventDefault()
+  setShowCompleted(!showCompleted)
+  router.refresh()
+}
+
 // On ANY change, update date/time. On COMPLETE, hide row from manager. 
   return (
   <div style={{overflowX: "auto"}} className='flex w-full'>
     <table className="table-xs text-center w-1/2 m-auto">      
           <thead>
             <tr>
-              <td colSpan={3}>Task Manager</td>
+              <td colSpan={2}>Task Manager for {session?.data?.user.name}</td>
+              <td><label><input name="completed" type="checkbox" onClick={handleClick} checked={showCompleted}></input> Include completed tasks?</label></td>
             </tr>
             <tr>
               <td>Task</td>
@@ -102,9 +115,9 @@ async function onClose() {
             <td>
               <button 
                 onClick={() => {
-                  setFormDataT({ task: task.task, id: task.id })
-                  setFormDataS({status: "null", id: ""})
-                  setFormDataP({priority: "null", id: ""})
+                  setFormDataT({...formDataT, task: task.task, id: task.id })
+                  setFormDataS({...formDataS, status: "null", id: ""})
+                  setFormDataP({...formDataP, priority: "null", id: ""})
                   router.push(`/user/${userId}?showDialogT=y`)  
                 }}>{task.task}</button>
                 <DialogT 
@@ -122,9 +135,9 @@ async function onClose() {
               <button 
                 className={`btn min-w-24 ${task.priority === 'HIGH'? 'text-red-500' : task.priority ==='MEDIUM'? 'text-yellow-500' : ''}`} 
                 onClick={() => {
-                  setFormDataP({ priority: task.priority, id: task.id })
-                  setFormDataT({task: "null", id: ""})
-                  setFormDataS({status: "null", id: ""})
+                  setFormDataP({...formDataP, priority: task.priority, id: task.id })
+                  setFormDataT({...formDataT, task: "null", id: ""})
+                  setFormDataS({...formDataS, status: "null", id: ""})
                   router.push(`/user/${userId}?showDialogP=y`)
                 }}>{task.priority}</button>
               <DialogP 
@@ -142,9 +155,9 @@ async function onClose() {
               <button 
                 className="btn min-w-24" 
                 onClick={() => {
-                  setFormDataS({ status: task.status, id: task.id })
-                  setFormDataT({task: "null", id: ""})
-                  setFormDataP({priority: "null", id: ""})
+                  setFormDataS({...formDataS, status: task.status, id: task.id })
+                  setFormDataT({...formDataT, task: "null", id: ""})
+                  setFormDataP({...formDataP, priority: "null", id: ""})
                   router.push(`/user/${userId}?showDialogS=y`)
                 }}>{task.status}</button>
                 <DialogS 

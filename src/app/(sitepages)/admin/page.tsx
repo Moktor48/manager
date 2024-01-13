@@ -1,22 +1,38 @@
-"use client"
 import React from 'react'
 import PushTasks from '~/app/_components/PushTasks'
-import { useSession } from 'next-auth/react'
-export default function AdminPage() {
-  const session = useSession()
-  const user = session?.data?.user
-  console.log("Session =", session)
-  if (user?.role !== 'admin' || null) {
+import { getServerAuthSession } from '~/server/auth'
+import UserHeader from '~/app/_components/UserHeader'
+import { api } from '~/trpc/server'
+export default async function AdminPage() {
+  const session = await getServerAuthSession()
+  const userPull = await api.post.userList.query()
+
+  if (!session) {
+    return <div>You are not logged in.</div>
+  }
+
+  if (session?.user.role !== 'admin') {
     return <div>You are not an admin, ass hole.</div>
   }
+
   return (
     <div>
-      <p>Welcome back, {user.role} {user.name}</p>
-      <PushTasks />
+      <p>Welcome back, {session.user.role} {session.user.name}</p>
+      <PushTasks 
+        id={session.user.id}
+      />
+      {userPull.map((user) => (
+        <UserHeader
+          key={user.id}
+          userId={user.id}
+          userName={user.name}
+          userImage={user.image}
+        />
+      ))}
+
     </div>
   )
 }
 // Poll DB for all users
-// Display all users in a pulldown menu
-// Once selected, use radio buttons to change roles ("Admin", "User", "Guest")
-// Save changes to DB
+// List tasks assigned by user, and all unassigned tasks
+// Allow users to self-assign, so include "unassigned" in everyone's task list? Or have a general task list that assigns to self based on session.

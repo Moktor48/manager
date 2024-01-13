@@ -11,8 +11,9 @@ type Props = {
     formData: {
         priority: string
         id: string
+        updated: string
     }
-    setFormData: (formData: {priority: string, id: string}) => void
+    setFormData: (formData: {priority: string, id: string, updated: string}) => void
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
     submit: (e: React.FormEvent<HTMLFormElement>) => void
 }

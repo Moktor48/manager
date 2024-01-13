@@ -11,8 +11,9 @@ type Props = {
     formData: {
         task: string
         id: string
+        updated: string
     }
-    setFormData: (formData: {task: string, id: string}) => void
+    setFormData: (formData: {task: string, id: string, updated: string}) => void
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
     submit: (e: React.FormEvent<HTMLFormElement>) => void
 }

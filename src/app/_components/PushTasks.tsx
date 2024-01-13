@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { api } from '~/trpc/react'
 import { useRouter } from 'next/navigation'
 
-export default function PushTasks() {
+export default function PushTasks({id}: {id: string}) {
     const router = useRouter()
     const now = new Date()
     const users = api.post.userList.useQuery()
-    const [formData, setFormData] = useState({task: "", status: "", userId: "", priority: "", created: now.toISOString()})
+    const [formData, setFormData] = useState({task: "", status: "Unassigned", userId: "Unassigned", priority: "", created: now.toISOString()})
     const mutation = api.post.pushTask.useMutation()
     async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFormData(prevFormData => {
@@ -33,7 +33,7 @@ export default function PushTasks() {
         console.log(formData)
         e.preventDefault()
         mutation.mutate(formData)
-        router.refresh()
+        router.push(`/admin/bounce/${id}`)
     }
     return (
         <div>
@@ -51,7 +51,7 @@ export default function PushTasks() {
 
                 <label>Status: </label>
                 <select name="status" onChange={handleChanges} value={formData.status}>
-                    <option value="choose">Choose</option>
+                    <option value="Unassigned">Unassigned</option>
                     <option value="Assigned">Assigned</option>
                     <option value="In-Development">In-Development</option>
                     <option value="Review">Review</option>
@@ -59,7 +59,7 @@ export default function PushTasks() {
 
                 <label>User: </label>
                 <select name="userId" onChange={handleChanges} value={formData.userId}>
-                    <option value="choose">Choose</option>
+                    <option value="Unassigned">Unassigned</option>
                     {users.data && (
                         <>
                         {users.data.map((user) => (
