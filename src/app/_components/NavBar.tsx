@@ -10,7 +10,7 @@ export default function NavBar() {
 
   if(session?.status === "unauthenticated") {
     return(
-    <div className="flex inline-flex bg-gradient-to-r from-indigo-500 text-3xl w-full">
+    <div className="flex inline-flex bg-gradient-to-r from-indigo-500 text-3xl w-full h-11">
 
       <div className='flex inline-flex justify-start w-1/2'>
         <p className='mx-5'><Link href="/">Home</Link></p>
@@ -25,7 +25,7 @@ export default function NavBar() {
   }
 
   return (
-  <div className="flex inline-flex bg-gradient-to-r from-indigo-500 text-3xl w-full">
+  <div className="flex inline-flex bg-gradient-to-r from-indigo-500 text-3xl w-full h-11">
 
     <div className='flex inline-flex justify-start w-1/2'>
         <p className='mx-5'><Link href="/">Home</Link></p>
@@ -34,7 +34,7 @@ export default function NavBar() {
     </div>
 
     <div className="justify-end flex inline-flex w-1/2">
-        { user?.image != undefined && <Image className='ml-5' src={user?.image} height={72} width={72} alt="avatar" />}
+        { user?.image != undefined && <Image className='ml-5' src={user?.image} height={45} width={45} alt="avatar" />}
         <p className='mr-5'>[{user?.name} is logged in]</p>
         <p className='mx-5'><Link href="/api/auth/signout">Logout</Link></p>      
     </div>

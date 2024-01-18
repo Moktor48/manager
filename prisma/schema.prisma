@@ -68,11 +68,9 @@ model Task {
     id       String    @id @default(cuid())
     task     String    @db.Text
     status   String    @default("assigned")
-    priority String    @default("low")
+    priority Int       @default(1)
     created  DateTime  @default(now())
-    begin    DateTime?
     updated  DateTime?
-    due      DateTime?
     userId   String
     user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -4,22 +4,37 @@ import { useState } from 'react'
 import { api } from '~/trpc/react'
 import { useRouter } from 'next/navigation'
 
-export default function PushTasks({id}: {id: string}) {
+export default function PushTasks() {
     const router = useRouter()
     const now = new Date()
     const users = api.post.userList.useQuery()
-    const [formData, setFormData] = useState({task: "", status: "Unassigned", userId: "Unassigned", priority: "", created: now.toISOString()})
-    const mutation = api.post.pushTask.useMutation()
+    const [formData, setFormData] = useState({task: "", status: "Unassigned", userId: "Unassigned", priority: 1, created: now.toISOString()})
+    const mutation = api.post.pushTask.useMutation({  
+        onSuccess: async () => {
+            location.reload()
+        },})
+
     async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setFormData(prevFormData => {
+            console.log(formData)
+            return {
+               ...prevFormData,
+                [e.target.name]: e.target.value,
+            }
+        })
+    }
+
+    async function handleChangeP(e: React.ChangeEvent<HTMLSelectElement>) {
     setFormData(prevFormData => {
         console.log(formData)
+
         return {
             ...prevFormData,
-            [e.target.name]: e.target.value,
+            priority: parseInt(e.target.value),
         }
     })
 }
-    async function handleChanges(e: React.ChangeEvent<HTMLSelectElement>) {
+    async function handleChangeS(e: React.ChangeEvent<HTMLSelectElement>) {
     setFormData(prevFormData => {
         console.log(formData)
 
@@ -29,11 +44,13 @@ export default function PushTasks({id}: {id: string}) {
         }
     })
 }
+
+
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         console.log(formData)
         e.preventDefault()
         mutation.mutate(formData)
-        router.push(`/admin/bounce/${id}`)
+        router.push(`/admin`)
     }
     return (
         <div>
@@ -42,23 +59,20 @@ export default function PushTasks({id}: {id: string}) {
                 <input type="text" name="task" onChange={handleChange} value={formData.task} />
 
                 <label>Priority: </label>
-                <select name="priority" onChange={handleChanges} value={formData.priority}>
-                    <option value="choose">Choose</option>
-                    <option value="HIGH">High</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="LOW">Low</option>
-                </select>
-
-                <label>Status: </label>
-                <select name="status" onChange={handleChanges} value={formData.status}>
-                    <option value="Unassigned">Unassigned</option>
-                    <option value="Assigned">Assigned</option>
-                    <option value="In-Development">In-Development</option>
-                    <option value="Review">Review</option>
+                <select 
+                name="priority"
+                value={formData.priority}
+                onChange={handleChangeP}
+                >
+                {[...Array(10).keys()].map(n => (
+                    <option key={n+1} value={n+1}>
+                    {n+1}
+                    </option>
+                ))}
                 </select>
 
                 <label>User: </label>
-                <select name="userId" onChange={handleChanges} value={formData.userId}>
+                <select name="userId" onChange={handleChangeS} value={formData.userId}>
                     <option value="Unassigned">Unassigned</option>
                     {users.data && (
                         <>
@@ -73,3 +87,16 @@ export default function PushTasks({id}: {id: string}) {
         </div>
   )
 }
+
+/*
+
+
+
+                <label>Status: </label>
+                <select name="status" onChange={handleChangeS} value={formData.status}>
+                    <option value="Unassigned">Unassigned</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="In-Development">In-Development</option>
+                    <option value="Review">Review</option>
+                </select>
+ */

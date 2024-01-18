@@ -7,8 +7,7 @@ import DialogT from './DialogT';
 import { useRouter } from 'next/navigation';
 import { useState } from'react';
 
-export default function UserTaskList({id}: {id: string}) {
-
+export default function UserTaskListUA({id}: {id: string}) {
 const userId = id
 const updateTime = new Date()
 const delTask = api.post.deleteTask.useMutation()
@@ -25,16 +24,13 @@ const updatePriority = api.post.updatePriority.useMutation({
     location.reload()
   },})
 const router = useRouter()
-
-// include completed tasks
-const [showCompleted, setShowCompleted] = useState(false)
-const {data: tasks} = showCompleted? api.post.fullUserTask.useQuery({userId}) : api.post.userTask.useQuery({userId})
+const {data: tasks} = api.post.unasnTask.useQuery()
 
 // Deletes entire task from database
 const handleDelete = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
   e.preventDefault()
   delTask.mutate({id: e.currentTarget.id})
-  router.push(`/admin`)
+  router.push(`/user/${id}`)
   router.refresh()
 }
 
@@ -63,14 +59,14 @@ function handleSubmitT(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault()
   setFormDataT({...formDataT, updated: updateTime.toISOString()})
   updateTask.mutate(formDataT)
-  router.push(`/admin`)
+  router.push(`/user/${id}`)
 }
 
 function handleSubmitP(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault()
   setFormDataP({...formDataP, updated: updateTime.toISOString()})
   updatePriority.mutate(formDataP)
-  router.push(`/admin`)
+  router.push(`/user/${id}`)
 }
 
 function handleSubmitS(e: React.FormEvent<HTMLFormElement>) {
@@ -78,7 +74,7 @@ function handleSubmitS(e: React.FormEvent<HTMLFormElement>) {
   setFormDataS({...formDataS, updated: updateTime.toISOString()})
   console.log(formDataS)
   updateStatus.mutate(formDataS)
-  router.push(`/admin`)
+  router.push(`/user/${id}`)
 }
 
 // Change handler for the task components to be modified
@@ -90,30 +86,30 @@ function handleChangeP(e: React.ChangeEvent<HTMLSelectElement>) {
   setFormDataP({...formDataP, priority: parseInt(e.target.value)})
 }
 
+
 function handleChangeS(e: React.ChangeEvent<HTMLInputElement>) {
-  setFormDataS({...formDataS, [e.target.name]: e.target.value})
+  if (e.target.name === 'status' && e.target.value != 'Unassigned') {
+    setFormDataS(prev => ({...prev, userId: userId}))
+  }
+  setFormDataS(prev => ({...prev, [e.target.name]: e.target.value}))
 }
 
 // Clears searchParams from URL and refreshes the page
 async function onClose() {
-  router.push(`/admin`)
+  router.push(`/user/${id}`)
 }
 
-function handleClick(e: React.MouseEvent<HTMLInputElement>) {
-  e.preventDefault()
-  setShowCompleted(!showCompleted)
-}
   return (
 <>
     <div style={{overflowX: "auto"}} className='flex w-full'>
-      
+      <h1 className="flex w-full inline-flex bg-gradient-to-r from-indigo-500 text-3xl h-11">Unassigned Tasks</h1>
       <table className="table text-center w-3/4 m-auto">      
         <thead>
           <tr>
             <td className="w-2/5 text-xl">Task</td>
             <td className="w-1/5 text-xl">Priority</td>
             <td className="w-1/5 text-xl">Status</td>
-            <td className="w-1/5 text-xl"><label><input name="completed" type="checkbox" onClick={handleClick} checked={showCompleted} readOnly></input> Include completed tasks?</label></td>
+
           </tr>
         </thead>
         <tbody>
@@ -125,7 +121,7 @@ function handleClick(e: React.MouseEvent<HTMLInputElement>) {
                 setFormDataT({...formDataT, task: task.task, id: task.id })
                 setFormDataS({...formDataS, status: "null", id: ""})
                 setFormDataP({...formDataP, priority: NaN, id: ""})
-                router.push(`/admin/?showDialogT=y`)  
+                router.push(`/user/${userId}?showDialogT=y`)  
               }}>{task.task}</button>
               <DialogT 
                 title="Change Task"
@@ -155,7 +151,7 @@ function handleClick(e: React.MouseEvent<HTMLInputElement>) {
                 setFormDataP({...formDataP, priority: task.priority, id: task.id })
                 setFormDataT({...formDataT, task: "null", id: ""})
                 setFormDataS({...formDataS, status: "null", id: ""})
-                router.push(`/admin/?showDialogP=y`)
+                router.push(`/user/${userId}?showDialogT=y`)
               }}>{task.priority}</button>
             <DialogP 
               title="Change Priority"
@@ -175,7 +171,7 @@ function handleClick(e: React.MouseEvent<HTMLInputElement>) {
                 setFormDataS({...formDataS, status: task.status, id: task.id })
                 setFormDataT({...formDataT, task: "null", id: ""})
                 setFormDataP({...formDataP, priority: NaN, id: ""})
-                router.push(`/admin/?showDialogSA=y`)
+                router.push(`/user/${userId}?showDialogT=y`)
               }}>{task.status}</button>
               <DialogSA 
                 title="Change Status"
@@ -203,111 +199,7 @@ function handleClick(e: React.MouseEvent<HTMLInputElement>) {
 // Instead, combine the query to pull ALL tasks, then map out the individual tasks by user.
 
 /*
-    <div>
-      {userList.data && (
-        <ul>
-          {userList.data.map((user) => (
-            <li key={user.id}>
-              <Link href={`/user/${user.id}`}>
-                <span>{user.name}</span><span>{ user.image != null && <Image src={user.image} height={100} width={100} alt={`${user.name}`} />}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div> 
-
-Mapping:
-model Task {
-  id        Int     @id @default(autoincrement())
-  task      String
-  status    String
-  priority  String
-  begin     DateTime
-  due       DateTime
-  user      User    @relation(fields: [userId], references: [id])
-  userId    Int
-}
-
-model User {
-  id    Int     @id @default(autoincrement())
-  name  String
-  image String
-}
-
-const result = await prisma.task.findMany({
-  select: {
-    id: true,
-    task: true, 
-    status: true,
-    priority: true,
-    begin: true,
-    due: true,
-    user: {
-      select: {
-        id: true,
-        name: true, 
-        image: true
-      }
-    }
-  }
-})
-
-const mappedResult = result.map(task => ({
-  userId: task.user.id,
-  userName: task.user.name,
-  userImage: task.user.image,
-  taskId: task.id,
-  task: task.task,
-  status: task.status,
-  priority: task.priority,
-  begin: task.begin,
-  due: task.due
-}))
-
-AVATAR    USERNAME
-Task    Status    Priority    Begin Date    Due Date    Delete
-Repeat for all tasks for a given User
-
-AVATAR    USERNAME (each user gets a new heading)
-Task    Status    Priority    Begin Date    Due Date    Delete
-
-...and so on
-
-Make a component and map the users to it
-Then make a child component that maps the task information under each user heading
-
-<UserLoop 
-  user.id
-  user.name
-  user.image
->
-  <TaskLoop
-    task.id
-    task.task
-    task.status
-    task.priority
-    task.begin
-    task.due
-  />
-</UserLoop>
-
-Another way is to make a query, count the users, then for-loop through the tasks for each user.
-pullAllUsers = api.userquery.query
-for (let i = 0; i < pullAllUsers.data.length; i++) {
-  pullAllTasks = api.taskquery.query
-  for (let j = 0; j < pullAllTasks.data.length; j++) {
-    if (pullAllTasks.data[j].userId === pullAllUsers.data[i].id) {
-      // do something with the task
-    }
-  }
-}
-
-OR... 
-
-query all users,
-map to a component
-inside the new component it simply creates the task list on a new query
+Next tasks:
 
 
 */

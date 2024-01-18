@@ -1,8 +1,6 @@
 import React from 'react'
 import UserTaskList from './UserTaskList'
-import { api } from '~/trpc/server'
 import Image from 'next/image'
-import { getServerAuthSession } from '~/server/auth'
 
 type Props = {
     userId: string
@@ -11,11 +9,9 @@ type Props = {
 }
 
 export default function UserHeader({userId, userName, userImage}: Props) {
-    const session = getServerAuthSession()
-    const userTasks = api.post.user.query
   return (
     <div>
-        <h1><span>{ userImage != undefined && <Image src={userImage} height={45} width={45} alt="avatar" />}</span><span>{userName}</span></h1>
+        <h1 className="flex inline-flex bg-gradient-to-r from-indigo-500 text-3xl w-full min-h-11"><span className="left-1/4" >{ userImage != undefined && <Image src={userImage} height={45} width={45} alt="avatar" />}</span><span>{userName}</span></h1>
         <UserTaskList 
             id={userId}
         />

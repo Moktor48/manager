@@ -6,19 +6,19 @@ import React from 'react'
 type Props = {
     onClose: () => void
     id: string
-    type: string
+    type: number
     title: string
     formData: {
-        priority: string
+        priority: number
         id: string
         updated: string
     }
-    setFormData: (formData: {priority: string, id: string, updated: string}) => void
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+    setFormData: (formData: {priority: number, id: string, updated: string}) => void
+    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
     submit: (e: React.FormEvent<HTMLFormElement>) => void
 }
 
-export default function Dialog({onClose, id, type, title, onChange, submit, formData, setFormData}: Props) {
+export default function DialogP({onClose, id, type, title, onChange, submit, formData, setFormData}: Props) {
   const searchParams = useSearchParams()
   const dialogRef = useRef<null | HTMLDialogElement>(null)
   const showDialogP = searchParams.get('showDialogP')
@@ -53,18 +53,17 @@ export default function Dialog({onClose, id, type, title, onChange, submit, form
         </div>
         <div>
           <form onSubmit={submit} className="priority-form flex flex-col justify-center items-center">
-            <label>
-              <input onChange={onChange} name="priority" type="radio" value="HIGH" checked={formData.priority === 'HIGH'} />
-              HIGH
-            </label><br />
-            <label>
-              <input onChange={onChange} name="priority" type="radio" value="MEDIUM" checked={formData.priority === 'MEDIUM'} />
-              MEDIUM
-            </label><br />
-            <label>
-              <input onChange={onChange} name="priority" type="radio" value="LOW" checked={formData.priority === 'LOW'} />
-              LOW
-            </label><br />
+        <select 
+          name="priority"
+          value={formData.priority}
+          onChange={onChange}
+        >
+          {[...Array(10).keys()].map(n => (
+            <option key={n+1} value={n+1}>
+              {n+1}
+            </option>
+          ))}
+        </select>
             <button type="submit">Submit</button>
           </form>
         </div>
@@ -75,3 +74,5 @@ export default function Dialog({onClose, id, type, title, onChange, submit, form
 
   return dialog
 }
+
+// Change radios to select pulldown!!! 1-10

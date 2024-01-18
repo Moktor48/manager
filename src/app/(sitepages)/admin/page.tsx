@@ -18,9 +18,7 @@ export default async function AdminPage() {
   return (
     <div>
       <p>Welcome back, {session.user.role} {session.user.name}</p>
-      <PushTasks 
-        id={session.user.id}
-      />
+      <PushTasks />
       {userPull.map((user) => (
         <UserHeader
           key={user.id}

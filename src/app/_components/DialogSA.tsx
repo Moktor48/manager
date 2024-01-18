@@ -19,29 +19,29 @@ type Props = {
     submit: (e: React.FormEvent<HTMLFormElement>) => void
 }
 
-export default function DialogS({onClose, id, type, title, onChange, submit, formData, setFormData}: Props) {
+export default function DialogSA({onClose, id, type, title, onChange, submit, formData, setFormData}: Props) {
   const searchParams = useSearchParams()
   const dialogRef = useRef<null | HTMLDialogElement>(null)
-  const showDialogS = searchParams.get('showDialogS')
+  const showDialogSA = searchParams.get('showDialogSA')
 
   useEffect(() => {
     setFormData({...formData, id: id, status: type})
   }, [])
 
   useEffect(() => {
-    if (showDialogS === 'y') {
+    if (showDialogSA === 'y') {
       dialogRef.current?.showModal()
     } else {
       dialogRef.current?.close()
     }
-  }, [showDialogS])
+  }, [showDialogSA])
 
   const closeDialog = () => {
     dialogRef.current?.close()
     onClose()
   }
 
-  const dialog: JSX.Element | null = showDialogS === 'y'
+  const dialog: JSX.Element | null = showDialogSA === 'y'
   ? (
     <dialog ref={dialogRef} className="backdrop:bg-gray-800/50">
       <div className="artboard phone-1 flex flex-col justify-center items-center w-1/2 h-1/2 m-auto">
@@ -69,6 +69,10 @@ export default function DialogS({onClose, id, type, title, onChange, submit, for
             <label>
               <input onChange={onChange} type="radio" name="status" value="Unassigned" checked={formData.status === 'Unassigned'} />
               Reject Assignment
+            </label>
+            <label>
+              <input onChange={onChange} type="radio" name="status" value="Completed" checked={formData.status === 'Completed'} />
+              Completed
             </label>
             <button type="submit">Submit</button>
           </form>

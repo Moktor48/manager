@@ -18,7 +18,7 @@ type Props = {
     submit: (e: React.FormEvent<HTMLFormElement>) => void
 }
 
-export default function Dialog({onClose, id, type, title, onChange, submit, formData, setFormData}: Props) {
+export default function DialogT({onClose, id, type, title, onChange, submit, formData, setFormData}: Props) {
   const searchParams = useSearchParams()
   const dialogRef = useRef<null | HTMLDialogElement>(null)
   const showDialogT = searchParams.get('showDialogT')

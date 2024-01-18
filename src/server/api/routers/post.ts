@@ -10,7 +10,7 @@ type UpdateTaskInput = {
   id: string;
   task?: string | undefined;
   status?: string | undefined;
-  priority?: string | undefined;
+  priority?: number | undefined;
 }
 
 export const postRouter = createTRPCRouter({
@@ -43,6 +43,8 @@ export const postRouter = createTRPCRouter({
     return task;
   }),
 
+
+
   // Includes completed task from search on specific user's tasks
   fullUserTask: protectedProcedure
   .input(z.object({ userId: z.string() }))
@@ -55,9 +57,30 @@ export const postRouter = createTRPCRouter({
     return task;
   }),
 
+  unasnTask: protectedProcedure
+  .query(async () => {
+    const task = await db.task.findMany({
+      where: { 
+        userId: "Unassigned",
+        status: { not: "Completed" },
+       },
+    });
+    return task;
+  }),
+
+  fullUnasnTask: protectedProcedure
+
+  .query(async () => {
+    const task = await db.task.findMany({
+      where: { 
+        userId: "Unassigned",
+       },
+    });
+    return task;
+  }),
 
   pushTask: protectedProcedure
-  .input(z.object({ userId: z.string(), task: z.string(), status: z.string(), priority: z.string(), created: z.string() }))
+  .input(z.object({ userId: z.string(), task: z.string(), status: z.string(), priority: z.number(), created: z.string() }))
   .mutation(async ({ input }) => {
     const task = await db.task.create({
       data: {
@@ -101,12 +124,14 @@ export const postRouter = createTRPCRouter({
   .input(z.object({ 
     id: z.string(), 
     status: z.string(),
-    updated: z.string() 
+    updated: z.string(),
+    userId: z.string()
   }))
   .mutation(async ({ input }) => {
     const task: UpdateTaskInput = await db.task.update({
       where: { id: input.id },
       data: {
+        userId: input.userId,
         status: input.status,
         updated: input.updated,
       },
@@ -117,7 +142,7 @@ export const postRouter = createTRPCRouter({
   updatePriority: protectedProcedure
   .input(z.object({ 
     id: z.string(), 
-    priority: z.string(),
+    priority: z.number(),
     updated: z.string()
   }))
   .mutation(async ({ input }) => {
@@ -130,28 +155,6 @@ export const postRouter = createTRPCRouter({
     });
     return task;
   }),
-
-  pullAllTasks: protectedProcedure
-  .query(async () => {
-  const result = await db.task.findMany({
-  select: {
-    id: true,
-    task: true, 
-    status: true,
-    priority: true,
-    begin: true,
-    due: true,
-    user: {
-      select: {
-        id: true,
-        name: true, 
-        image: true
-      }
-    }
-  }
-})
-  return result;
-}),
 
 });
 

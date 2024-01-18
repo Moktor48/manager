@@ -3,20 +3,44 @@ import { api } from '~/trpc/react'
 import DialogP from './DialogP';
 import DialogS from './DialogS';
 import DialogT from './DialogT';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from'react';
-import { useSearchParams } from 'next/navigation';
+import {  useState } from'react';
 
-export default function PullTasks({id}: {id: string}) {
+
+type Props = {
+  id: string
+  name?: string | null
+}
+
+interface Task {
+  id: string
+  task: string
+  status: string
+  priority: number
+  updated: Date | null
+  created: Date
+  userId: string
+}
+
+export default function PullTasks({id, name}: Props) {
 const userId = id
 const updateTime = new Date()
-const session = useSession()
 const delTask = api.post.deleteTask.useMutation()
-const updateTask = api.post.updateTask.useMutation()
-const updateStatus = api.post.updateStatus.useMutation()
-const updatePriority = api.post.updatePriority.useMutation()
-const router = useRouter()
+const updateTask = api.post.updateTask.useMutation({  
+  onSuccess: async () => {
+    location.reload()
+  },})
+const updateStatus = api.post.updateStatus.useMutation({  
+  onSuccess: async () => {
+    location.reload()
+  },})
+const updatePriority = api.post.updatePriority.useMutation({  
+  onSuccess: async () => {
+    location.reload()
+  },})
+const router = useRouter() 
+
+
 
 // include completed tasks
 const [showCompleted, setShowCompleted] = useState(false)
@@ -26,7 +50,7 @@ const {data: tasks} = showCompleted? api.post.fullUserTask.useQuery({userId}) : 
 const handleDelete = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
   e.preventDefault()
   delTask.mutate({id: e.currentTarget.id})
-  router.push(`/user/bounce/${userId}`)
+  router.refresh()
 }
 
 // formData for the task components to be modified
@@ -38,14 +62,15 @@ const [formDataT, setFormDataT] = useState({
 
 const [formDataP, setFormDataP] = useState({
   updated: updateTime.toISOString(),
-  priority: "null",
+  priority: NaN,
   id: ""
 })
 
 const [formDataS, setFormDataS] = useState({
   updated: updateTime.toISOString(),
   status: "null",
-  id: ""
+  id: "",
+  userId: userId
 })
 
 // Submission logic for the task components to be modified
@@ -53,21 +78,24 @@ function handleSubmitT(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault()
   setFormDataT({...formDataT, updated: updateTime.toISOString()})
   updateTask.mutate(formDataT)
-  router.push(`/user/bounce/${userId}`)
+router.push(`/user/${userId}`)
 }
 
 function handleSubmitP(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault()
   setFormDataP({...formDataP, updated: updateTime.toISOString()})
   updatePriority.mutate(formDataP)
-  router.push(`/user/bounce/${userId}`)
+router.push(`/user/${userId}`)
+
 }
 
 function handleSubmitS(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault()
   setFormDataS({...formDataS, updated: updateTime.toISOString()})
-  updateStatus.mutate(formDataS)
-  router.push(`/user/bounce/${userId}`)
+  updateStatus.mutate({
+    ...formDataS,
+    userId: formDataS.status === 'Unassigned' ? 'Unassigned' : formDataS.userId})
+  router.push(`/user/${userId}`)
 }
 
 // Change handler for the task components to be modified
@@ -75,49 +103,49 @@ function handleChangeT(e: React.ChangeEvent<HTMLInputElement>) {
   setFormDataT({...formDataT, [e.target.name]: e.target.value})
 }
 
-function handleChangeP(e: React.ChangeEvent<HTMLInputElement>) {
-  setFormDataP({...formDataP, [e.target.name]: e.target.value})
+function handleChangeP(e: React.ChangeEvent<HTMLSelectElement>) {
+  setFormDataP({...formDataP, priority: parseInt(e.target.value)})
 }
 
 function handleChangeS(e: React.ChangeEvent<HTMLInputElement>) {
-  setFormDataS({...formDataS, [e.target.name]: e.target.value})
+  if (e.target.name === 'status' && e.target.value === 'Unassigned') {
+    setFormDataS(prev => ({...prev, userId: 'Unassigned'}))
+  }
+  setFormDataS(prev => ({...prev, [e.target.name]: e.target.value}))
 }
 
 // Clears searchParams from URL and refreshes the page
 async function onClose() {
-  router.push(`/user/${userId}`)
+router.push(`/user/${userId}`)
 }
 
 function handleClick(e: React.MouseEvent<HTMLInputElement>) {
   e.preventDefault()
   setShowCompleted(!showCompleted)
-  router.refresh()
 }
 
 // On ANY change, update date/time. On COMPLETE, hide row from manager. 
   return (
-  <div style={{overflowX: "auto"}} className='flex w-full'>
-    <table className="table-xs text-center w-1/2 m-auto">      
+  <div style={{overflowX: "auto"}} className='w-full'>
+    <h1 className="flex w-full inline-flex bg-gradient-to-r from-indigo-500 text-3xl h-11">Task Manager for {name}</h1>
+    <table className="table text-center w-3/4 m-auto">      
           <thead>
             <tr>
-              <td colSpan={2}>Task Manager for {session?.data?.user.name}</td>
-              <td><label><input name="completed" type="checkbox" onClick={handleClick} checked={showCompleted}></input> Include completed tasks?</label></td>
-            </tr>
-            <tr>
-              <td>Task</td>
-              <td>Priority</td>
-              <td>Status</td>
+              <td className="w-2/5 text-2xl">Task</td>
+              <td className="w-1/5 text-2xl">Priority</td>
+              <td className="w-1/5 text-2xl">Status</td>
+              <td className="w-1/5 text-2xl"><label><input name="completed" type="checkbox" onClick={handleClick} checked={showCompleted} readOnly></input> Include completed tasks?</label></td>
             </tr>
           </thead>
           <tbody>
-          {tasks?.map((task) => (
+          {tasks?.map((task: Task) => (
             <tr key={task.id}>
             <td>
               <button 
                 onClick={() => {
                   setFormDataT({...formDataT, task: task.task, id: task.id })
                   setFormDataS({...formDataS, status: "null", id: ""})
-                  setFormDataP({...formDataP, priority: "null", id: ""})
+                  setFormDataP({...formDataP, priority: NaN, id: ""})
                   router.push(`/user/${userId}?showDialogT=y`)  
                 }}>{task.task}</button>
                 <DialogT 
@@ -133,7 +161,17 @@ function handleClick(e: React.MouseEvent<HTMLInputElement>) {
             </td>
             <td>
               <button 
-                className={`btn min-w-24 ${task.priority === 'HIGH'? 'text-red-500' : task.priority ==='MEDIUM'? 'text-yellow-500' : ''}`} 
+                className={`btn min-w-24 ${
+                  task.priority === 1? 'q1' : 
+                  task.priority === 2? 'q2' : 
+                  task.priority === 3? 'q3' : 
+                  task.priority === 4? 'q4' : 
+                  task.priority === 5? 'q5' : 
+                  task.priority === 6? 'q6' : 
+                  task.priority === 7? 'q7' : 
+                  task.priority === 8? 'q8' : 
+                  task.priority === 9? 'q9' : 
+                  'q10'}`} 
                 onClick={() => {
                   setFormDataP({...formDataP, priority: task.priority, id: task.id })
                   setFormDataT({...formDataT, task: "null", id: ""})
@@ -157,7 +195,7 @@ function handleClick(e: React.MouseEvent<HTMLInputElement>) {
                 onClick={() => {
                   setFormDataS({...formDataS, status: task.status, id: task.id })
                   setFormDataT({...formDataT, task: "null", id: ""})
-                  setFormDataP({...formDataP, priority: "null", id: ""})
+                  setFormDataP({...formDataP, priority: NaN, id: ""})
                   router.push(`/user/${userId}?showDialogS=y`)
                 }}>{task.status}</button>
                 <DialogS 
@@ -183,23 +221,7 @@ function handleClick(e: React.MouseEvent<HTMLInputElement>) {
 //</span><span>Change Status: [Assigned] [In-Development] [Review] | <Link href="">Completed</Link></span>
 
 /*
-TASK: Click: Allow text to be changed, submit button to save changes
-STATUS: Click: Checks which status is current, hides that option, shows other options (Assigned, In-Development, Review, Completed)
-        The options will be buttons on a modal
-        Clicking a button will automatically submit the change to the DB, "Completed" should also mark the completion date
-Priority: Click: Checks which priority is current, hides that option, shows other options
-        The options will be buttons on a modal
-        Clicking a button will automatically submit the change to the DB
-
-Modal: On click: Show Modal, populate Modal with task.id
-    Priority: Radio options for HIGH, MEDIUM, LOW, with current choice selected
-    Status: Radio options for Assigned, In-Development, Review, and Complete with current choice selected
-    Task: Text input for task, with current task populated
-    Submit button: On click: Submits changes to DB, closes modal, refreshes page
-    Cancel button: On click: Closes modal, does not submit changes to DB, does not refresh page
-    Pass state through Modal, clicking a button will open a modal with the task.id and the state of the task
-
-    One submit to rule them all: Since they are all in the Task table, I should be able to run a modify query to make changes as needed without changing the whole row
-
-
-    */
+Self-assign from "unassigned" will add current user to task, and "assign" the task
+Reject will remove the current user from the task, and "unassign" the task; this will replace "delete"
+Figure out DB logging
+*/
