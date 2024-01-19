@@ -4,23 +4,34 @@ import { useRef, useEffect } from "react"
 import React from 'react'
 
 type Props = {
+    setFormData: React.Dispatch<React.SetStateAction<Props['formData']>>
     onClose: () => void
-    formData: {
-        status: string
-        id: string
-        updated: string
-        userId: string
-    }
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
     submit: (e: React.FormEvent<HTMLFormElement>) => void
+    formData: {
+      userId: string
+      id: string
+      updated: string
+      status: string
+    }
 }
 
-export default function DialogSA({onClose, onChange, submit, formData}: Props) {
+type Form ={
+    status: string
+    id: string
+    updated: string
+    userId: string
+}
+
+export default function DialogSA({onClose, onChange, submit, formData, setFormData}: Props) {
   const searchParams = useSearchParams()
+  const formD: Form = JSON.parse(searchParams.get('formData') ?? '{}') as Form
   const dialogRef = useRef<null | HTMLDialogElement>(null)
   const showDialogSA = searchParams.get('showDialogSA')
 
+
   useEffect(() => {
+    setFormData(formD)
     if (showDialogSA === 'y') {
       dialogRef.current?.showModal()
     } else {
@@ -35,7 +46,7 @@ export default function DialogSA({onClose, onChange, submit, formData}: Props) {
 
   const dialog: JSX.Element | null = showDialogSA === 'y'
   ? (
-    <dialog ref={dialogRef} className="backdrop:bg-gray-800/50">
+    <dialog ref={dialogRef} className="backdrop:bg-gray-800/10">
       <div className="artboard phone-1 flex flex-col justify-center items-center w-1/2 h-1/2 m-auto">
         <div className="static top-0">
           <h1 className="justify-start">Change Status</h1>
@@ -45,6 +56,7 @@ export default function DialogSA({onClose, onChange, submit, formData}: Props) {
           >X</button>
         </div>
         <div>
+          <h1>{formData.status}</h1>
           <form onSubmit={submit} className="status-form">
             <label>
               <input onChange={onChange} type="radio" name="status" value="Assigned" checked={formData.status === 'Assigned'} />

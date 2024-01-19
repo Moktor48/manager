@@ -43,7 +43,12 @@ export const postRouter = createTRPCRouter({
     return task;
   }),
 
-
+  megaUserTask: protectedProcedure
+  .query(async () => {
+    const task = await db.task.findMany({
+    });
+    return task;
+  }),
 
   // Includes completed task from search on specific user's tasks
   fullUserTask: protectedProcedure
@@ -101,6 +106,29 @@ export const postRouter = createTRPCRouter({
       where: { id: input.id },
     });
     return task;
+  }),
+
+  updateEntry: protectedProcedure
+  .input(z.object({
+    id: z.string(),
+    userId: z.string(),
+    task: z.string(),
+    status: z.string(),
+    priority: z.number(),
+    updated: z.string(),
+  }))
+  .mutation(async ({ input }) => {
+    const update = await db.task.update({
+      where: { id: input.id },
+      data: {
+        userId: input.userId,
+        task: input.task,
+        status: input.status,
+        priority: input.priority,
+        updated: input.updated,
+      },
+    });
+    return update;
   }),
 
   updateTask: protectedProcedure

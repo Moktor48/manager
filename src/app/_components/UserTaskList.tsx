@@ -1,101 +1,72 @@
 "use client"
 import React from 'react'
 import { api } from '~/trpc/react';
-import DialogP from './DialogP';
-import DialogSA from './DialogSA';
-import DialogT from './DialogT';
+import Dialog from './DialogX';
 import { useRouter } from 'next/navigation';
 import { useState } from'react';
+import PushTasks from './PushTasks';
 
-export default function UserTaskList({userId}: {userId: string}) {
+type Props = {
+  userId: string
+  formData: {
+    id: string
+    userId: string
+    task: string
+    status: string
+    priority: number
+    updated: string
+  },
+  setFormData: React.Dispatch<React.SetStateAction<Props['formData']>>
+}
+
+export default function UserTaskList({userId, formData, setFormData}: Props) {
   const updateTime = new Date()
+  const router = useRouter()
 
 // include completed tasks
   const [showCompleted, setShowCompleted] = useState(false)
   const {data: tasks} = showCompleted? api.post.fullUserTask.useQuery({userId}) : api.post.userTask.useQuery({userId})
 
 //DELETE updating
-  const delTask = api.post.deleteTask.useMutation()
+  const delTask = api.post.deleteTask.useMutation({
+    onSuccess: async () => {
+      location.reload()
+    }
+  })
+
   const handleDelete = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault()
     delTask.mutate({id: e.currentTarget.id})
-    router.push(`/admin`)
-    router.refresh()
   }
 
-//STATUS updating
-  const updateStatus = api.post.updateStatus.useMutation({  
+//MODIFY updating
+  const handleModify = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    e.preventDefault()
+    router.push(`/admin?showdialog=y`)
+  }
+
+//FULL update
+  const fullUpdate = api.post.updateEntry.useMutation({  
     onSuccess: async () => {
       location.reload()
     },})
 
-  const [formDataS, setFormDataS] = useState({
-    updated: updateTime.toISOString(),
-    status: "null",
-    id: "",
-    userId: userId
-  })
-
-  function handleChangeS(e: React.ChangeEvent<HTMLInputElement>) {
-    setFormDataS({...formDataS, 
+  function handleChange<T extends HTMLElement>(e: React.ChangeEvent<T>) {
+    setFormData({...formData,
+      task: e.target.value,
       status: e.target.value,
-      userId: e.target.value === "Unassigned"? "Unassigned" : formDataS.userId
+      priority: parseInt(e.target.value),
+      userId: e.target.value === "Unassigned"? "Unassigned" : userId
       })
   }
 
-  function handleSubmitS(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setFormDataS({...formDataS, updated: updateTime.toISOString()})
-    updateStatus.mutate(formDataS)
+    setFormData({...formData, updated: updateTime.toISOString()})
+    fullUpdate.mutate(formData)
     router.push(`/admin`)
   }
 
-//TASK updating  
-  const updateTask = api.post.updateTask.useMutation({  
-    onSuccess: async () => {
-      location.reload()
-    },})
-
-  const [formDataT, setFormDataT] = useState({
-    updated: updateTime.toISOString(),
-    task: "null",
-    id: ""
-  })
-
-  function handleChangeT(e: React.ChangeEvent<HTMLInputElement>) {
-    setFormDataT({...formDataT, [e.target.name]: e.target.value})
-  }
-
-  function handleSubmitT(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setFormDataT({...formDataT, updated: updateTime.toISOString()})
-    updateTask.mutate(formDataT)
-    router.push(`/admin`)
-  }
-
-//PRIORITY updating
-  const updatePriority = api.post.updatePriority.useMutation({  
-    onSuccess: async () => {
-      location.reload()
-    },})
-  const router = useRouter()
-
-  const [formDataP, setFormDataP] = useState({
-    updated: updateTime.toISOString(),
-    priority: NaN,
-    id: ""
-  })
-
-  function handleChangeP(e: React.ChangeEvent<HTMLSelectElement>) {
-    setFormDataP({...formDataP, priority: parseInt(e.target.value)})
-  }
-
-  function handleSubmitP(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setFormDataP({...formDataP, updated: updateTime.toISOString()})
-    updatePriority.mutate(formDataP)
-    router.push(`/admin`)
-  }
 
 //Dialog close  
 async function onClose() {
@@ -113,73 +84,51 @@ function handleClick(e: React.MouseEvent<HTMLInputElement>) {
       <table className="table text-center w-3/4 m-auto">      
         <thead>
           <tr>
-            <td className="w-2/5 text-xl">Task</td>
-            <td className="w-1/5 text-xl">Priority</td>
-            <td className="w-1/5 text-xl">Status</td>
-            <td className="w-1/5 text-xl"><label><input name="completed" type="checkbox" onClick={handleClick} checked={showCompleted} readOnly></input> Include completed tasks?</label></td>
+            <td className="w-1/3 text-xl">Task</td>
+            <td className="w-1/6 text-xl">Priority</td>
+            <td className="w-1/6 text-xl">Status</td>
+            <td className="w-1/6 text-xl"><label><input name="completed" type="checkbox" onClick={handleClick} checked={showCompleted} readOnly></input> Include completed tasks?</label></td>
           </tr>
         </thead>
         <tbody>
           {tasks?.map((task) => (
           <tr key={task.id}>
-          <td>
-            <button 
-              onClick={() => {
-                setFormDataT({...formDataT, task: task.task, id: task.id })
-                setFormDataS({...formDataS, status: "null", id: ""})
-                setFormDataP({...formDataP, priority: NaN, id: ""})
-                router.push(`/admin/?showDialogT=y`)  
-              }}>{task.task}</button>
-              <DialogT 
-                onClose={onClose}
-                submit={handleSubmitT}
-                onChange={handleChangeT}
-                formData={formDataT}
-                />
-          </td>
-          <td>
-            <button 
-              className={`btn min-w-24 ${
-                  task.priority === 1? 'q1' : 
-                  task.priority === 2? 'q2' : 
-                  task.priority === 3? 'q3' : 
-                  task.priority === 4? 'q4' : 
-                  task.priority === 5? 'q5' : 
-                  task.priority === 6? 'q6' : 
-                  task.priority === 7? 'q7' : 
-                  task.priority === 8? 'q8' : 
-                  task.priority === 9? 'q9' : 
-                  'q10'}`} 
-              onClick={() => {
-                setFormDataP({...formDataP, priority: task.priority, id: task.id })
-                setFormDataT({...formDataT, task: "null", id: ""})
-                setFormDataS({...formDataS, status: "null", id: ""})
-                router.push(`/admin/?showDialogP=y`)
-              }}>{task.priority}</button>
-            <DialogP 
+            <td>
+              <button >
+                  {task.task}
+              </button>
+            </td>
+            <td>
+              <button 
+                className={`btn min-w-24 ${
+                    task.priority === 1? 'q1' : 
+                    task.priority === 2? 'q2' : 
+                    task.priority === 3? 'q3' : 
+                    task.priority === 4? 'q4' : 
+                    task.priority === 5? 'q5' : 
+                    task.priority === 6? 'q6' : 
+                    task.priority === 7? 'q7' : 
+                    task.priority === 8? 'q8' : 
+                    task.priority === 9? 'q9' : 
+                    'q10'}`}>
+                {task.priority}
+              </button>
+            </td>
+            <td>
+              <button 
+                className="btn min-w-24">
+                  {task.status}
+                </button>
+            </td>
+            <td><button id={task.id} onClick={handleModify} className="btn min-w-24 text-yellow-500">Modify</button></td>
+            <td><button id={task.id} onClick={handleDelete} className="btn min-w-24 text-red-500">Delete</button></td>
+            <Dialog 
               onClose={onClose}
-              submit={handleSubmitP}
-              onChange={handleChangeP}
-              formData={formDataP}
-            />
-          </td>
-          <td>
-            <button 
-              className="btn min-w-24" 
-              onClick={() => {
-                console.log(task)
-                setFormDataS({...formDataS, status: task.status, id: task.id, userId: task.userId })
-                console.log(formDataS)
-                router.push(`/admin/?showDialogSA=y`)
-              }}>{task.status}</button>
-              <DialogSA 
-                onClose={onClose}
-                submit={handleSubmitS}
-                onChange={handleChangeS}
-                formData={formDataS}
-                />
-          </td>
-          <td><button id={task.id} onClick={handleDelete} className="btn min-w-24 text-red-500">Delete</button></td>
+              onSubmit={handleSubmit} 
+              formData={formData}
+              setFormData={setFormData}
+              onChange={handleChange}
+              />
           </tr>
         ))}{/* End of the Map */}
         </tbody>
