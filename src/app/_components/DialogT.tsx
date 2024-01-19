@@ -5,27 +5,19 @@ import React from 'react'
 
 type Props = {
     onClose: () => void
-    id: string
-    type: string
-    title: string
     formData: {
         task: string
         id: string
         updated: string
     }
-    setFormData: (formData: {task: string, id: string, updated: string}) => void
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
     submit: (e: React.FormEvent<HTMLFormElement>) => void
 }
 
-export default function DialogT({onClose, id, type, title, onChange, submit, formData, setFormData}: Props) {
+export default function DialogT({onClose, onChange, submit, formData}: Props) {
   const searchParams = useSearchParams()
   const dialogRef = useRef<null | HTMLDialogElement>(null)
   const showDialogT = searchParams.get('showDialogT')
-
-  useEffect(() => {
-    setFormData({...formData, id: id, task: type})
-  }, [])
 
   useEffect(() => {
     if (showDialogT === 'y') {
@@ -45,7 +37,7 @@ export default function DialogT({onClose, id, type, title, onChange, submit, for
     <dialog ref={dialogRef} className="backdrop:bg-gray-800/50">
       <div className="artboard phone-1 flex flex-col justify-center items-center w-1/2 h-1/2 m-auto">
         <div className="static top-0">
-          <h1 className="justify-start">{title}</h1>
+          <h1 className="justify-start">Modify Task</h1>
           <button 
           className="justify-end text-red-500"
           onClick={closeDialog}

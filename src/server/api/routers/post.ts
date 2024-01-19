@@ -57,7 +57,7 @@ export const postRouter = createTRPCRouter({
     return task;
   }),
 
-  unasnTask: protectedProcedure
+  unassignedTask: protectedProcedure
   .query(async () => {
     const task = await db.task.findMany({
       where: { 
@@ -68,7 +68,7 @@ export const postRouter = createTRPCRouter({
     return task;
   }),
 
-  fullUnasnTask: protectedProcedure
+  fullUnassignedTask: protectedProcedure
 
   .query(async () => {
     const task = await db.task.findMany({

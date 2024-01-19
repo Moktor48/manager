@@ -9,12 +9,13 @@ export default function PushTasks() {
     const now = new Date()
     const users = api.post.userList.useQuery()
     const [formData, setFormData] = useState({task: "", status: "Unassigned", userId: "Unassigned", priority: 1, created: now.toISOString()})
+    
     const mutation = api.post.pushTask.useMutation({  
         onSuccess: async () => {
             location.reload()
         },})
 
-    async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         setFormData(prevFormData => {
             console.log(formData)
             return {
@@ -24,7 +25,7 @@ export default function PushTasks() {
         })
     }
 
-    async function handleChangeP(e: React.ChangeEvent<HTMLSelectElement>) {
+    function handleChangeP(e: React.ChangeEvent<HTMLSelectElement>) {
     setFormData(prevFormData => {
         console.log(formData)
 
@@ -34,17 +35,12 @@ export default function PushTasks() {
         }
     })
 }
-    async function handleChangeS(e: React.ChangeEvent<HTMLSelectElement>) {
-    setFormData(prevFormData => {
-        console.log(formData)
-
-        return {
-            ...prevFormData,
-            [e.target.name]: e.target.value,
+    function handleChangeS(e: React.ChangeEvent<HTMLSelectElement>) {
+        setFormData(prev => ({...prev, 
+            userId: e.target.value,
+            status: e.target.value === "Unassigned"? "Unassigned" : "Assigned"
+        }))
         }
-    })
-}
-
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         console.log(formData)

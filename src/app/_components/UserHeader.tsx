@@ -13,7 +13,7 @@ export default function UserHeader({userId, userName, userImage}: Props) {
     <div>
         <h1 className="flex inline-flex bg-gradient-to-r from-indigo-500 text-3xl w-full min-h-11"><span className="left-1/4" >{ userImage != undefined && <Image src={userImage} height={45} width={45} alt="avatar" />}</span><span>{userName}</span></h1>
         <UserTaskList 
-            id={userId}
+            userId={userId}
         />
     </div>
   )
