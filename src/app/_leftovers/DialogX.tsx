@@ -1,12 +1,11 @@
 "use client"
 import { useSearchParams } from "next/navigation"
-import { useRef, useEffect, useState } from "react"
+import { useRef, useEffect } from "react"
 import React from 'react'
 
 type Props = {
     onClose: () => void,
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void,
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
     setFormData: React.Dispatch<React.SetStateAction<Props['formData']>>
     formData: {
     id: string
@@ -18,11 +17,43 @@ type Props = {
     }
 }
 
-export default function Dialog({onClose, onSubmit, onChange, formData, setFormData}: Props) {
+export default function Dialog({onClose, onSubmit, formData, setFormData}: Props) {
 
   const searchParams = useSearchParams()
   const dialogRef = useRef<null | HTMLDialogElement>(null)
   const showDialog = searchParams.get('showDialog')
+
+    function handleChangeT(e: React.ChangeEvent<HTMLInputElement>) {
+    console.log(formData)
+    setFormData(prev => {
+    return {
+      ...prev,
+      task: e.target.value,
+    }
+  })
+  }
+
+    function handleChangeP(e: React.ChangeEvent<HTMLSelectElement>) {
+    console.log(formData)
+    setFormData(prev => {
+    return {
+      ...prev,
+      priority: parseInt(e.target.value),
+    }
+  })
+  }
+
+    function handleChangeS(e: React.ChangeEvent<HTMLSelectElement>) {
+    console.log(formData)
+    setFormData(prev => {
+    return {
+      ...prev,
+      status: e.target.value,
+      userId: e.target.value === "Unassigned"? "Unassigned" : userId
+    }
+  })
+  }
+
 
   useEffect(() => {
     if (showDialog === 'y') {
@@ -39,7 +70,7 @@ export default function Dialog({onClose, onSubmit, onChange, formData, setFormDa
 
   const dialog: JSX.Element | null = showDialog === 'y'
   ? (
-    <dialog ref={dialogRef} className="backdrop:bg-gray-800/50">
+    <dialog ref={dialogRef} className="backdrop:bg-gray-800/10">
       <div className="artboard phone-1 flex flex-col justify-center items-center w-1/2 h-1/2 m-auto">
         <div className="static top-0">
           <h1 className="justify-start">Modify Task</h1>
@@ -51,12 +82,12 @@ export default function Dialog({onClose, onSubmit, onChange, formData, setFormDa
         <div>
           <form onSubmit={onSubmit} className="task-form">
             <label>
-              <input onChange={onChange} type="text" name="task" value={formData.task} />
+              <input onChange={handleChangeT} type="text" name="task" value={formData.task} />
             </label>
             <select 
               name="priority"
               value={formData.priority}
-              onChange={onChange}
+              onChange={handleChangeP}
             >
               {[...Array(10).keys()].map(n => (
               <option key={n+1} value={n+1}>
@@ -64,7 +95,7 @@ export default function Dialog({onClose, onSubmit, onChange, formData, setFormDa
               </option>
               ))}
             </select>
-            <select name="status" onChange={onChange} value={formData.status}>
+            <select name="status" onChange={handleChangeS} value={formData.status}>
               <option value="Assigned">Assigned</option>
               <option value="In-Development">In-Development</option>
               <option value="Review">Review</option>

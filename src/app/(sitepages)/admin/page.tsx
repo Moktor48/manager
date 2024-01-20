@@ -1,5 +1,4 @@
 import React from 'react'
-import UserHeader from '~/app/_components/UserHeader'
 import { getServerAuthSession } from '~/server/auth'
 import { api } from '~/trpc/server'
 import PushTasks from '~/app/_components/PushTasks'
@@ -23,15 +22,6 @@ export default async function AdminPage() {
     <div>
       <p>Welcome back, {session.user.role} {session.user.name}</p>
       <PushTasks />
-      {userPull.map((user) => (
-        <UserHeader
-          key={user.id}
-          userId={user.id}
-          userName={user.name}
-          userImage={user.image}
-        />
-      ))}
-
     </div>
   )
 }

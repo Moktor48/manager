@@ -1,28 +1,21 @@
 "use client"
 import React from 'react'
 import { api } from '~/trpc/react';
-import Dialog from './DialogX';
 import { useRouter } from 'next/navigation';
 import { useState } from'react';
-import PushTasks from './PushTasks';
+import DialogAuton from './DialogAuton';
+
 
 type Props = {
+
   userId: string
-  formData: {
-    id: string
-    userId: string
-    task: string
-    status: string
-    priority: number
-    updated: string
-  },
-  setFormData: React.Dispatch<React.SetStateAction<Props['formData']>>
 }
 
-export default function UserTaskList({userId, formData, setFormData}: Props) {
-  const updateTime = new Date()
+export default function UserTaskList({userId}: Props) {
   const router = useRouter()
-
+  async function onClose() {
+    router.push(`/admin`)
+  }
 // include completed tasks
   const [showCompleted, setShowCompleted] = useState(false)
   const {data: tasks} = showCompleted? api.post.fullUserTask.useQuery({userId}) : api.post.userTask.useQuery({userId})
@@ -38,40 +31,6 @@ export default function UserTaskList({userId, formData, setFormData}: Props) {
     e.preventDefault()
     delTask.mutate({id: e.currentTarget.id})
   }
-
-//MODIFY updating
-  const handleModify = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    e.preventDefault()
-    router.push(`/admin?showdialog=y`)
-  }
-
-//FULL update
-  const fullUpdate = api.post.updateEntry.useMutation({  
-    onSuccess: async () => {
-      location.reload()
-    },})
-
-  function handleChange<T extends HTMLElement>(e: React.ChangeEvent<T>) {
-    setFormData({...formData,
-      task: e.target.value,
-      status: e.target.value,
-      priority: parseInt(e.target.value),
-      userId: e.target.value === "Unassigned"? "Unassigned" : userId
-      })
-  }
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setFormData({...formData, updated: updateTime.toISOString()})
-    fullUpdate.mutate(formData)
-    router.push(`/admin`)
-  }
-
-
-//Dialog close  
-async function onClose() {
-  router.push(`/admin`)
-}
 
 //Checkbox logic
 function handleClick(e: React.MouseEvent<HTMLInputElement>) {
@@ -120,15 +79,23 @@ function handleClick(e: React.MouseEvent<HTMLInputElement>) {
                   {task.status}
                 </button>
             </td>
-            <td><button id={task.id} onClick={handleModify} className="btn min-w-24 text-yellow-500">Modify</button></td>
+            <td>
+              <button  id={task.id}
+                onClick={()=> {
+                  console.log(task.id)
+                  router.push(`/admin?showDialog=y&id=${task.id}`)
+                }} 
+                className="btn min-w-24 text-yellow-500">
+                  Modify
+              </button>
+                <DialogAuton 
+                  onClose={onClose}
+                  id={task.id}
+                  userId={task.userId}
+                />
+
+            </td>
             <td><button id={task.id} onClick={handleDelete} className="btn min-w-24 text-red-500">Delete</button></td>
-            <Dialog 
-              onClose={onClose}
-              onSubmit={handleSubmit} 
-              formData={formData}
-              setFormData={setFormData}
-              onChange={handleChange}
-              />
           </tr>
         ))}{/* End of the Map */}
         </tbody>

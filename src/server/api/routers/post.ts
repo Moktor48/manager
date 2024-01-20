@@ -184,6 +184,23 @@ export const postRouter = createTRPCRouter({
     return task;
   }),
 
+  pullTask: protectedProcedure
+  .input(z.object({ id: z.string() }))
+  .query(async ({ input }) => {
+    const task = await db.task.findUnique({
+      where: { id: input.id },
+      select: {
+        id: true,
+        task: true,
+        status: true,
+        priority: true,
+        userId: true,
+        updated: true,
+        },
+      });
+          return task;
+    }),
+
 });
 
 export type PostRouter = typeof postRouter;
